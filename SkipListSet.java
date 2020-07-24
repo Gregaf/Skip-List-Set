@@ -6,13 +6,15 @@
 //package SkipList;
 
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.Iterator;
+import java.util.NoSuchElementException;
 import java.util.SortedSet;
 import java.util.Random;
 import java.lang.Math;
-import java.lang.Exception;
 
 // need a reference to java docs
+@SuppressWarnings("unchecked")
 public class SkipListSet<T extends Comparable<T>> implements SortedSet<T>
 { 
   private final int mMinimumHeight = 4;
@@ -216,25 +218,31 @@ public class SkipListSet<T extends Comparable<T>> implements SortedSet<T>
   // Returns a set view of fromElement - toElement.
   public SortedSet<T> subSet(T fromElement, T toElement)
   {
-    throw new UnsupportedOperationException("This method is not yet supported.");
+    SortedSet<T> newSubset = new SkipListSet<T>();
+
+    for (T element : this) 
+    {
+      if(element.compareTo(fromElement) >= 0 && element.compareTo(toElement) <= 0)
+      {
+        newSubset.add(element);
+      }
+
+    }
+
+    return newSubset;
   }
   
   // Returns a set view of all elements < toElement.
   public SortedSet<T> headSet(T toElement)
   {
-    SkipListSet<T> newHeadSet = new SkipListSet<T>();
-    Iterator it = this.iterator();
+    SortedSet<T> newHeadSet = new SkipListSet<T>();
 
-    while(it.hasNext())
+    for (T element : this) 
     {
-      T item = (T) it.next();
-
-      if(toElement.compareTo(item) > 0)
+      if(toElement.compareTo(element) > 0)
       {
-        newHeadSet.add(item);
+        newHeadSet.add(element);
       }
-      else
-        break;
     }
 
     return newHeadSet;
@@ -243,7 +251,17 @@ public class SkipListSet<T extends Comparable<T>> implements SortedSet<T>
   // Return a set view of all elements >= fromElement.
   public SortedSet<T> tailSet(T fromElement)
   {
-    throw new UnsupportedOperationException("This method is not yet supported.");
+    SortedSet<T> newTailSet = new SkipListSet<T>();
+
+    for (T element : this) 
+    {
+      if(element.compareTo(fromElement) >= 0)
+      {
+        newTailSet.add(element);
+      }
+    }
+
+    return newTailSet;
   } 
   
   public void printListLayout()
@@ -262,7 +280,6 @@ public class SkipListSet<T extends Comparable<T>> implements SortedSet<T>
       tempItem2 = tempItem2.down;
       tempItem = tempItem2;
     }
-
   }
 
   // Accepts an element to search for at a specified height...
@@ -377,7 +394,7 @@ public class SkipListSet<T extends Comparable<T>> implements SortedSet<T>
 
     SkipListSetItem item = findItem((T) obj, mBaseLevelHeight);
 
-    if(item.element.compareTo((T) obj) == 0)
+    if(item.element != null && item.element.compareTo((T) obj) == 0)
       return true;
     else
       return false;
@@ -401,7 +418,6 @@ public class SkipListSet<T extends Comparable<T>> implements SortedSet<T>
       return true;
   }
   
-
   public boolean equals(Object obj)
   {
     if(this.hashCode() == obj.hashCode())
@@ -413,7 +429,7 @@ public class SkipListSet<T extends Comparable<T>> implements SortedSet<T>
   public int hashCode() 
   {
     int hashCodeSum = 0;
-    Iterator it = this.iterator();
+    Iterator<T> it = this.iterator();
 
     while(it.hasNext())
     {
@@ -481,7 +497,7 @@ public class SkipListSet<T extends Comparable<T>> implements SortedSet<T>
   
   public boolean retainAll(Collection<?> col) 
   { 
-    Iterator it = this.iterator();
+    Iterator<T> it = this.iterator();
     int failures = 0;
 
     while(it.hasNext())
@@ -504,7 +520,7 @@ public class SkipListSet<T extends Comparable<T>> implements SortedSet<T>
   {
     int i = 0;
 
-    Iterator it = this.iterator();
+    Iterator<T> it = this.iterator();
     Object[] newArray = new Object[this.size()];
     while(it.hasNext())
     {
@@ -515,7 +531,10 @@ public class SkipListSet<T extends Comparable<T>> implements SortedSet<T>
     return newArray;
   }
   
-  public <T> T[] toArray(T[] a) {return null;}
+  public <T> T[] toArray(T[] a) 
+  {
+    return null;
+  }
   
   private class SkipListSetIterator implements Iterator<T>
   {

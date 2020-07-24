@@ -1,10 +1,7 @@
 //import SkipList.SkipListSet;
-
-import java.util.Collection;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.SortedSet;
-import java.util.ArrayList;
+
 
 public class SkipListTest
 {
@@ -12,7 +9,6 @@ public class SkipListTest
   {
     SkipListSet<Integer> myList = new SkipListSet<Integer>();    
     LinkedList<Integer> linkedList = new LinkedList<Integer>();
-    ArrayList<Integer> arrayList = new ArrayList<Integer>();
 
     linkedList.add(12);
     linkedList.add(100);
@@ -20,6 +16,13 @@ public class SkipListTest
     linkedList.add(49);
     linkedList.add(5);
     myList.addAll(linkedList);
+
+    SortedSet<Integer> myTailSet = myList.subSet(56, 100);
+    
+    for (Integer element : myTailSet) 
+    {
+      System.out.println(element);
+    }
 
     System.out.println("The last item within the SkipList is: " + myList.last());
     
