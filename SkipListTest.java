@@ -1,32 +1,35 @@
 //import SkipList.SkipListSet;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.SortedSet;
+import java.util.TreeSet;
 
 
 public class SkipListTest
 {
   public static void main(String[] args)
-  {
-    SkipListSet<Integer> myList = new SkipListSet<Integer>();    
-    LinkedList<Integer> linkedList = new LinkedList<Integer>();
+  { 
+    TreeSet<Integer> treeSet = new TreeSet<Integer>();
 
-    linkedList.add(12);
-    linkedList.add(100);
-    linkedList.add(56);
-    linkedList.add(49);
-    linkedList.add(5);
-    myList.addAll(linkedList);
+    treeSet.add(12);
+    treeSet.add(100);
+    treeSet.add(56);
+    treeSet.add(49);
+    treeSet.add(5);
 
-    SortedSet<Integer> myTailSet = myList.subSet(56, 100);
+    SkipListSet<Integer> myList = new SkipListSet<Integer>(treeSet);   
+    myList.first();
+
+    Integer[] stuff = myList.toArray(new Integer[myList.size()]);
     
-    for (Integer element : myTailSet) 
+    System.out.println(myList.equals(treeSet));
+
+
+    for (Integer element : stuff) 
     {
       System.out.println(element);
     }
 
-    System.out.println("The last item within the SkipList is: " + myList.last());
-    
-    System.out.println("Elements in the list: " + myList.size());
   }
 
 

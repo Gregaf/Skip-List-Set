@@ -2,9 +2,11 @@
  * SkipListSet
  * 1.0
  * 6/24/2020
+ * Work by: Gregory Freitas
+ * Reference(s): Docs.oracle.com. 2020. Java Platform SE 7. [online] Available at: <https://docs.oracle.com/javase/7/docs/api/>
  */
-//package SkipList;
 
+//package SkipList;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.Iterator;
@@ -12,54 +14,54 @@ import java.util.NoSuchElementException;
 import java.util.SortedSet;
 import java.util.Random;
 import java.lang.Math;
+import java.lang.reflect.Array;
+import java.util.Set;
 
-// need a reference to java docs
-@SuppressWarnings("unchecked")
-public class SkipListSet<T extends Comparable<T>> implements SortedSet<T>
+public class SkipListSet<E extends Comparable<E>> implements SortedSet<E>
 { 
-  private final int mMinimumHeight = 4;
+  private int mMaximumHeight = 0;
+  private int mMinimumHeight = 4;
   private final int mBaseLevelHeight = 0;
 
   private SkipListSetItem mHead;
+  private SkipListSetItem mBaseHead;
+
   private int mNumberOfElements;
 
-  private int mMaximumHeight = 0;
   private Random mRandom;
   
   public SkipListSet()
   {
     this.mHead = new SkipListSetItem(null, 0);
+    mBaseHead = mHead;
     mRandom = new Random();
 
-    
     while(mMaximumHeight < mMinimumHeight)
     {
-      growHeight();
+      growMaxHeight();
     }
 
     mNumberOfElements = 0;
   }
   
-  public SkipListSet(Collection<T> newCollection)
+  public SkipListSet(Collection<E> newCollection)
   {
-    mRandom = new Random(2);
+    this.mHead = new SkipListSetItem(null, 0);
+    mBaseHead = mHead;
+    mRandom = new Random();
 
     while(mMaximumHeight < mMinimumHeight)
     {
-      growHeight();
+      growMaxHeight();
     }
-    
+
+    mNumberOfElements = 0;
+
     addAll(newCollection);
   }
   
-  // Return the current maximum height of the tree.
-  public int GetHeight()
-  {
-    return this.mMaximumHeight;
-  }
-
-  // Grow the list by one level.
-  private void growHeight()
+  /*Grow the skip list by one level. */ 
+  private void growMaxHeight()
   {    
     SkipListSetItem newHead = new SkipListSetItem(mHead.element, mHead.height + 1);
     
@@ -69,7 +71,8 @@ public class SkipListSet<T extends Comparable<T>> implements SortedSet<T>
     mMaximumHeight++;
   }
 
-  private void shrinkHeight()
+  /*Decrease the maximum Height of the skiplist by one, doing so removes a level. */
+  private void shrinkMaxHeight()
   {
     if(mMaximumHeight == 0)
       return;
@@ -87,7 +90,7 @@ public class SkipListSet<T extends Comparable<T>> implements SortedSet<T>
     mMaximumHeight--;
   }
   
-  // 50% chance to return true or false.
+  /*Returns true or false with a 50% chance */
   private boolean randomRoll() 
   { 
     boolean attempt = (this.mRandom.nextInt() % 2) == 0 ? true : false;
@@ -95,61 +98,51 @@ public class SkipListSet<T extends Comparable<T>> implements SortedSet<T>
     return attempt; 
   }
   
-  // Give an item an oppurtunity to grow to the maximumHeight
+  /*Give a passed in item an oppurtunity to grow to the maximumHeight. */
   private void growingPhase(SkipListSetItem item)
   {
-      SkipListSetItem tempItem = item;
+      SkipListSetItem itemToGrow = item;
       
       // while the roll is a success and the height of our item is still below the maximum height...
-      while(randomRoll() && tempItem.height < mMaximumHeight)
+      while(randomRoll() && itemToGrow.height < mMaximumHeight)
       { 
-        tempItem = growItem(tempItem);
+        itemToGrow = growItem(itemToGrow);
       }
       
       //System.out.println("My Node: " + tempItem.data + "," + tempItem.height);
   }
   
-  private SkipListSetItem getBaseHead()
-  {
-    SkipListSetItem t = mHead;
-
-    while(t.down != null)
-    {
-      t = t.down;
-    }
-
-    return t;
-  }
-
-  // create an item above the item to grow with the same data but an increased height, then link the nodes appropriately.
+  /*Creates an item above the passed itemToGrow with the same data but with an increased height,
+    then links the nodes appropriately. */
   private SkipListSetItem growItem(SkipListSetItem itemToGrow)
   {
-      SkipListSetItem t;
+      SkipListSetItem currentItem;
       SkipListSetItem upperItem = new SkipListSetItem(itemToGrow.element, (itemToGrow.height + 1));
       
       upperItem.down = itemToGrow;
       
       // Step to where the item will be inserted.
-      t = findItem(itemToGrow.element, upperItem.height);
+      currentItem = findItem(itemToGrow.element, upperItem.height);
            
-      upperItem.right = t.right;
-      upperItem.left = t;
+      upperItem.right = currentItem.right;
+      upperItem.left = currentItem;
            
       // The item will be placed inbetween two items.
-      if(t.right != null)
+      if(currentItem.right != null)
       {
-        t.right.left = upperItem;
-        t.right = upperItem;
+        currentItem.right.left = upperItem;
+        currentItem.right = upperItem;
       }
       // Otherwise it will be the end of the list.
       else
       {
-        t.right = upperItem;
+        currentItem.right = upperItem;
       }
         
       return upperItem;
   }
   
+  /*Gives every item a chance to grow from the base height. */
   public void reBalance()
   {
     SkipListSetItem newHead = mHead;
@@ -171,31 +164,24 @@ public class SkipListSet<T extends Comparable<T>> implements SortedSet<T>
     }
   }
     
-  // returns null to use natural ordering of the set.
-  public Comparator<? super T> comparator(){ return null; }
+  /*Returns null to use natural ordering of the set. */
+  public Comparator<? super E> comparator(){ return null; }
   
-  // Return the smallest element in the set.
-  public T first()
+  /*Return the smallest element in the set. */
+  public E first()
   {
-    SkipListSetItem t = mHead;
-
-    // Move t down to the base level.
-    while(t.down != null)
-    {
-      t = t.down;
-    }
-
-    // If the list is not empty, return the element stored in the item to the right.
-    if(t.right != null)
-      return (t.right.element);
-    else
+    if(this.isEmpty())
       throw new NoSuchElementException("There are no elements within " + toString());
-    
+    else
+      return this.mBaseHead.right.element;
   }
   
-  // Return the largest element in the set.
-  public T last()
+  /*Return the largest element in the set. */
+  public E last()
   {
+    if(this.isEmpty())
+      throw new NoSuchElementException("There are no elements within " + toString());
+
     SkipListSetItem t = mHead;
 
     while(true)
@@ -209,18 +195,17 @@ public class SkipListSet<T extends Comparable<T>> implements SortedSet<T>
         t = t.down;
       else
         break;
-
     }
 
     return (t.element);
   }
   
-  // Returns a set view of fromElement - toElement.
-  public SortedSet<T> subSet(T fromElement, T toElement)
+  /*Returns a sorted set view of fromElement to toElement. (fromElement <= included <= toElement) */
+  public SortedSet<E> subSet(E fromElement, E toElement)
   {
-    SortedSet<T> newSubset = new SkipListSet<T>();
+     SortedSet<E> newSubset = new SkipListSet<E>();
 
-    for (T element : this) 
+    for (E element : this) 
     {
       if(element.compareTo(fromElement) >= 0 && element.compareTo(toElement) <= 0)
       {
@@ -232,12 +217,12 @@ public class SkipListSet<T extends Comparable<T>> implements SortedSet<T>
     return newSubset;
   }
   
-  // Returns a set view of all elements < toElement.
-  public SortedSet<T> headSet(T toElement)
+  /*Returns a sorted set view of type T. (included <= toElement) */
+  public SortedSet<E> headSet(E toElement)
   {
-    SortedSet<T> newHeadSet = new SkipListSet<T>();
+    SortedSet<E> newHeadSet = new SkipListSet<E>();
 
-    for (T element : this) 
+    for (E element : this) 
     {
       if(toElement.compareTo(element) > 0)
       {
@@ -248,12 +233,12 @@ public class SkipListSet<T extends Comparable<T>> implements SortedSet<T>
     return newHeadSet;
   } 
   
-  // Return a set view of all elements >= fromElement.
-  public SortedSet<T> tailSet(T fromElement)
+  /*Returns a sorted set view of type T. (included >= fromElement) */
+  public SortedSet<E> tailSet(E fromElement)
   {
-    SortedSet<T> newTailSet = new SkipListSet<T>();
+    SortedSet<E> newTailSet = new SkipListSet<E>();
 
-    for (T element : this) 
+    for (E element : this) 
     {
       if(element.compareTo(fromElement) >= 0)
       {
@@ -264,46 +249,32 @@ public class SkipListSet<T extends Comparable<T>> implements SortedSet<T>
     return newTailSet;
   } 
   
-  public void printListLayout()
-  {
-    SkipListSetItem tempItem = mHead;
-    SkipListSetItem tempItem2 = mHead;
-
-    while(tempItem2 != null)
-    {
-      while(tempItem != null)
-      {
-        System.out.print(tempItem.element + " ");
-        tempItem =tempItem.right;
-      }
-      System.out.println("");
-      tempItem2 = tempItem2.down;
-      tempItem = tempItem2;
-    }
-  }
-
-  // Accepts an element to search for at a specified height...
-  // ...and returns that item or the closest element.
-  private SkipListSetItem findItem(T e, int targetHeight)
+  /*Takes in an element to search for, and a specified height to look for.
+    It then returns the item when its found, or head if it isn't found. */
+  private SkipListSetItem findItem(E e, int targetHeight)
   {
     SkipListSetItem currentItem = mHead;
     
     while(true)
     {        
+
+      // If we can move right, and the target element is greater than the element to the right.
       while(currentItem.right != null && e.compareTo(currentItem.right.element) >= 0)
       {   
-        // Encountered a duplicate     
+        // Encountered a duplicate.     
         if(e.compareTo(currentItem.right.element) == 0)
           return currentItem.right;
 
+        // Move right.
         currentItem = currentItem.right;
       }
            
+
       if(currentItem.height != targetHeight)
       {
         currentItem = currentItem.down;
       }
-      // We are on bottom layer and can now insert the new item.
+      // Bottom layer has been reached.
       else
       {  
          break;
@@ -313,30 +284,32 @@ public class SkipListSet<T extends Comparable<T>> implements SortedSet<T>
     return currentItem;
   }
   
-  // Inserts the element into the set, returning true on a successful add...
-  // ...otherwise return false for any duplicates.
-  public boolean add(T e)
+  /*Takes in an element to add to the SkipListSet. 
+    Returns true if the item is added and false if it is not.*/
+  public boolean add(E e)
   { 
-    SkipListSetItem t = findItem(e, mBaseLevelHeight);
+
+    SkipListSetItem currentItem = findItem(e, mBaseLevelHeight);
     
-    if(t.element != null && e.compareTo(t.element) == 0)
+    // If there is a duplicate item, then return false.
+    if(currentItem.element != null && e.compareTo(currentItem.element) == 0)
       return false;   
     
+    
     SkipListSetItem newItem = new SkipListSetItem(e);
-         
-    newItem.right = t.right;
-    newItem.left = t;
+    newItem.right = currentItem.right;
+    newItem.left = currentItem;
          
     // The item will be placed inbetween two items.
-    if(t.right != null)
+    if(currentItem.right != null)
     {
-      t.right.left = newItem;
-      t.right = newItem;
+      currentItem.right.left = newItem;
+      currentItem.right = newItem;
     }
     // Otherwise it will be the end of the list.
     else
     {
-      t.right = newItem;
+      currentItem.right = newItem;
     }
          
     mNumberOfElements++;   
@@ -346,31 +319,32 @@ public class SkipListSet<T extends Comparable<T>> implements SortedSet<T>
     // If a power of 2 is passed for the size of our list, grow the max height.
     if(mNumberOfElements > (int) (Math.pow(2, mMaximumHeight)))
     {
-      growHeight();
+      growMaxHeight();
     }
     
     return true;
   }
   
-  // Add all elements from the supplied collection to this SkipListSet...
-  // ...then return true on a successful modification, otherwise false.
-  public boolean addAll(Collection<? extends T> col)
+  /*Takes in a collection to add any of its elements to this SkipListSet. 
+    Returns true on successful modification and false otherwise.*/
+  public boolean addAll(Collection<? extends E> col)
   { 
     int failures = 0;
 
-    for (T itemT : col) 
+    for (E itemT : col) 
     {
       if(add(itemT) == false)
         failures++;
     }
     
+    // Every item has failed to be added.
     if(failures == col.size())
       return false;
     else 
       return true;
   }
   
-  // Remove all the elements from this set.
+  /*Removes all the elements from this set. */
   public void clear() 
   {
     SkipListSetItem t = mHead;
@@ -383,80 +357,104 @@ public class SkipListSet<T extends Comparable<T>> implements SortedSet<T>
     }
     
     mNumberOfElements = 0;
+    mMaximumHeight = mMinimumHeight;
   }
   
-  // Search for the supplied element within this set...
-  // ...return true if the element is found, otherwise false.
+  /*Takes in an element to search for. Returns true if the element exists in the set
+    and false otherwise. */
+  @SuppressWarnings("unchecked")
   public boolean contains(Object obj) 
   { 
     if(obj == null)
       return false;
 
-    SkipListSetItem item = findItem((T) obj, mBaseLevelHeight);
+    SkipListSetItem item = findItem((E) obj, mBaseLevelHeight);
 
-    if(item.element != null && item.element.compareTo((T) obj) == 0)
+    if(item.element != null && item.element.compareTo((E) obj) == 0)
       return true;
     else
       return false;
   }
   
-  // Check if all the elements within the collection are within the skipListSet...
-  // ...return true if the collections is a subset of SkipListSet, otherwise false.
+  /*Takes in a collection to compare it contents to this SkipListSet.
+    Returns true if the collection is a subset of this SkipListSet, and false otherwise. */
+  @SuppressWarnings("unchecked")
   public boolean containsAll(Collection<?> col) 
   { 
-    int failures = 0;
-
     for (Object e : col) 
     {
-      if(!contains((T) e))
-        failures++;
+      if(!contains((E) e))
+        return false;
     }
 
-    if(failures > 0)
-      return false;
-    else
-      return true;
+    return true;
   }
   
+  /*Takes in an object to compare to. Returns true if the specifed object is
+    a Set and the size of the set is equivalent, and if every element contained
+    in this Set exists within the passed Set. */
+  @Override
   public boolean equals(Object obj)
   {
-    if(this.hashCode() == obj.hashCode())
-      return true;
-    else
+    Set<?> set;
+
+    // If the passed object is of type set, cast it.
+    if(obj instanceof Set)
+    {
+      set = (Set<?>) obj;
+    }
+    else 
       return false;
+
+    if(this.size() != set.size())
+      return false;
+
+    // If even one element is not contained, then the contract is not held.
+    if(!containsAll(set))
+      return false;
+
+    return true;
   }
   
+  /*Returns a hashcode value for this set, which is defined as
+    the sum of hashcodes of each element within the set. */
+  @Override
   public int hashCode() 
   {
-    int hashCodeSum = 0;
-    Iterator<T> it = this.iterator();
-
-    while(it.hasNext())
-    {
-      System.out.println(it.next().hashCode());
-    }
+    int sumOfHashCodes = 0;
     
-    return hashCodeSum;
+    for (E item : this)
+    {
+      sumOfHashCodes += item.hashCode();
+    }
+
+    return sumOfHashCodes;
   }
   
   
-  // Return true if the list is empty.
+  /*Return true if the list is empty. */
   public boolean isEmpty() { return (mNumberOfElements == 0); }
   
-  public Iterator<T> iterator()
+  /*Returns an Iterator for this SkipListSet. */
+  public Iterator<E> iterator()
   {
-    SkipListSetIterator newIterator = new SkipListSetIterator(getBaseHead());
+    final SkipListSetIterator newIterator = new SkipListSetIterator(mBaseHead);
 
     return newIterator;
   }
   
+  /*Takes in an element to remove from this SkipListSet.
+    Returns true on successful remove and false otherwise. */
+  @SuppressWarnings("unchecked")
   public boolean remove(Object obj) 
   {
-    SkipListSetItem t = findItem((T) obj, mBaseLevelHeight);
+    SkipListSetItem t = findItem((E) obj, mBaseLevelHeight);
 
-    if(t.element.compareTo((T) obj) != 0)
+    // If the element found is not equivalent to desired element, then return false.
+    if(t.element.compareTo((E) obj) != 0)
       return false;
 
+    // Handle Item links.
     while(t != null)
     {
       t.left.right = t.right;
@@ -473,19 +471,22 @@ public class SkipListSet<T extends Comparable<T>> implements SortedSet<T>
     // ...only if it would not exceed the minimumHeight.
     if(mNumberOfElements < (int) (Math.pow(2, mMaximumHeight)) && (mMaximumHeight - 1 >= mMinimumHeight))
     {
-      shrinkHeight();
+      shrinkMaxHeight();
     }
 
     return true;
   }
   
+  /*Takes in a collection and removes all elements that exist in the collection from
+    this SkipListSet. Returns true on successful modification of SkipList, and false otherwise. */
+  @SuppressWarnings("unchecked")
   public boolean removeAll(Collection<?> col) 
   {
     int failures = 0;
 
     for (Object obj : col) 
     {
-      if(!remove((T) obj))
+      if(!remove((E) obj))
         failures++;
     }
 
@@ -495,9 +496,11 @@ public class SkipListSet<T extends Comparable<T>> implements SortedSet<T>
       return true;
   }
   
+  /*Takes in a collection and removes all elements that dont exist within the collection from
+    this SkipListSet. Returns true on successful modifiaction of SkipList, and false otherwise. */
   public boolean retainAll(Collection<?> col) 
   { 
-    Iterator<T> it = this.iterator();
+    Iterator<E> it = this.iterator();
     int failures = 0;
 
     while(it.hasNext())
@@ -514,14 +517,16 @@ public class SkipListSet<T extends Comparable<T>> implements SortedSet<T>
       return true;
   }
   
+  /*Return the number of elements within this SkipList. */
   public int size() { return (this.mNumberOfElements); }
   
+  /*Returns an Object array of all the elements within this SkipListSet. */
   public Object[] toArray() 
   {
     int i = 0;
+    final Iterator<E> it = this.iterator();
+    final Object[] newArray = new Object[this.size()];
 
-    Iterator<T> it = this.iterator();
-    Object[] newArray = new Object[this.size()];
     while(it.hasNext())
     {
       newArray[i] = it.next();
@@ -531,14 +536,61 @@ public class SkipListSet<T extends Comparable<T>> implements SortedSet<T>
     return newArray;
   }
   
+  /*Takes in an a generic array to be modified.
+    Returns the array with the elements within the SkipListSet. */
+  @SuppressWarnings("unchecked")
   public <T> T[] toArray(T[] a) 
   {
-    return null;
+    if (a.length < this.size()) 
+    { 
+      a = (T[]) Array.newInstance(a.getClass().getComponentType(), this.mNumberOfElements);
+    } 
+    else if (a.length > this.size()) 
+    {
+      a[this.size()] = null;
+    }
+    
+    Iterator<E> it = this.iterator();
+
+    for(int i = 0; i < this.mNumberOfElements; i++)
+    {
+      if(it.hasNext())
+        a[i] = (T) it.next();
+    }
+
+    return a;
+  }
+
+  /*Prints the skip list and each item as many times as they appear at their height */
+  public void printListLayout()
+  {
+    SkipListSetItem tempItem = mHead;
+    SkipListSetItem tempItem2 = mHead;
+
+    // Traverse vertically to move down a level.
+    while(tempItem2 != null)
+    {
+      // Print each element horizontally among that level.
+      while(tempItem != null)
+      {
+        System.out.print(tempItem.element + " ");
+        tempItem = tempItem.right;
+      }
+      System.out.println("");
+      tempItem2 = tempItem2.down;
+      tempItem = tempItem2;
+    }
+  }
+
+  /*Return the current maximum height of the tree. */
+  public int getHeight()
+  {
+    return this.mMaximumHeight;
   }
   
-  private class SkipListSetIterator implements Iterator<T>
+  /*Iterator for the SkipListSet. */
+  private class SkipListSetIterator implements Iterator<E>
   {
-    // need a currentNode so we can move spaces
     SkipListSetItem currentItem;
 
     public SkipListSetIterator(SkipListSetItem currentItem)
@@ -546,39 +598,40 @@ public class SkipListSet<T extends Comparable<T>> implements SortedSet<T>
       this.currentItem = currentItem;
     }   
     
-    // Check the right.right
-    public boolean hasNext(){ return (currentItem.right != null);}
+    /*Return true if there are more items to iterate over. */
+    public boolean hasNext(){ return (currentItem.right != null); }
     
-    public T next()
+    /*Move to the right and then return the element */
+    public E next()
     {
       currentItem = currentItem.right;
       
       return currentItem.element;
     }
     
-    // Remove the last returned item in the iteration.
+    /*Remove the last returned item in the iteration. */
     public void remove()
     {
         SkipListSet.this.remove(currentItem.element);
     }   
   } 
   
-  
-  private class SkipListSetItem
+  /*Represents the container for the elements within the SkipList */
+  private class SkipListSetItem 
   {
 
     SkipListSetItem right, left, down;
     int height;
-    T element;
+    E element;
 
-    public SkipListSetItem(T data)
+    public SkipListSetItem(E data)
     {
       this.element = data;
       this.height = 0;
       this.right = left = down = null;
     }
     
-    public SkipListSetItem(T data, int height)
+    public SkipListSetItem(E data, int height)
     {  
       this.element = data;
       this.height = height;
@@ -591,6 +644,6 @@ public class SkipListSet<T extends Comparable<T>> implements SortedSet<T>
       return ("(Data, Height)" + element + "," + height);
     }
   }
-  
+
 }
 
